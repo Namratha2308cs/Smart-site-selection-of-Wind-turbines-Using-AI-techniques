@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-history"></i> Prediction History</h2>
+        <p class="lead">Your complete prediction history</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">All Predictions</h5>
+            </div>
+            <div class="card-body">
+                {% if history %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Prediction</th>
+                                <th>Probability</th>
+                                <th>Wind Speed (m/s)</th>
+                                <th>Terrain Type</th>
+                                <th>Land Use</th>
+                                <th>Installation Cost ($M)</th>
+                                <th>Energy Output (MW)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pred in history %}
+                            <tr>
+                                <td>{{ pred.created_at }}</td>
+                                <td>
+                                    {% if pred.prediction == 1 %}
+                                        <span class="badge bg-success">Optimal</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Not Optimal</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 20px; width: 100px;">
+                                        <div class="progress-bar {% if pred.prediction == 1 %}bg-success{% else %}bg-danger{% endif %}" 
+                                             style="width: {{ (pred.probability * 100)|int }}%">
+                                            {{ "%.1f"|format(pred.probability * 100) }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% set input_data = pred.input_data|fromjson %}
+                                    {{ "%.1f"|format(input_data.get('Wind Speed (m/s)', 0)) }}
+                                </td>
+                                <td>
+                                    {% set input_data = pred.input_data|fromjson %}
+                                    {{ input_data.get('Terrain Type', 'N/A') }}
+                                </td>
+                                <td>
+                                    {% set input_data = pred.input_data|fromjson %}
+                                    {{ input_data.get('Land Use', 'N/A') }}
+                                </td>
+                                <td>
+                                    {% set input_data = pred.input_data|fromjson %}
+                                    ${{ "%.1f"|format(input_data.get('installation_cost (million $)', 0)) }}
+                                </td>
+                                <td>
+                                    {% set input_data = pred.input_data|fromjson %}
+                                    {{ "%.1f"|format(input_data.get('energy_output_potential (MW)', 0)) }}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary view-details" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#detailsModal"
+                                            data-prediction="{{ pred.prediction }}"
+                                            data-probability="{{ pred.probability }}"
+                                            data-features="{{ pred.feature_importance }}"
+                                            data-input="{{ pred.input_data }}">
+                                        <i class="fas fa-eye"></i> Details
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5>No prediction history</h5>
+                    <p class="text-muted">You haven't made any predictions yet.</p>
+                    <a href="{{ url_for('predict') }}" class="btn btn-primary">
+                        <i class="fas fa-calculator"></i> Make Your First Prediction
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal (same as in dashboard) -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Prediction Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // View details modal functionality
+    const viewButtons = document.querySelectorAll('.view-details');
+    viewButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const prediction = this.getAttribute('data-prediction');
+            const probability = this.getAttribute('data-probability');
+            const features = JSON.parse(this.getAttribute('data-features'));
+            const input = JSON.parse(this.getAttribute('data-input'));
+            
+            let modalContent = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Prediction Result:</h6>
+                        <p class="${prediction == 1 ? 'text-success' : 'text-danger'}">
+                            <strong>${prediction == 1 ? 'Optimal Site' : 'Not Optimal Site'}</strong>
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Confidence:</h6>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar ${prediction == 1 ? 'bg-success' : 'bg-danger'}" 
+                                 style="width: ${(probability * 100).toFixed(1)}%">
+                                ${(probability * 100).toFixed(1)}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <h6>Top Influencing Factors:</h6>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Factor</th>
+                                <th>Importance</th>
+                                <th>Your Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            
+            // Add feature importance rows
+            Object.entries(features).forEach(([feature, importance]) => {
+                modalContent += `
+                    <tr>
+                        <td>${feature}</td>
+                        <td>
+                            <div class="progress" style="height: 15px;">
+                                <div class="progress-bar" style="width: ${Math.abs(importance) * 1000}%">
+                                    ${importance.toFixed(4)}
+                                </div>
+                            </div>
+                        </td>
+                        <td>${input[feature] || 'N/A'}</td>
+                    </tr>`;
+            });
+            
+            modalContent += `
+                        </tbody>
+                    </table>
+                </div>`;
+            
+            document.getElementById('modalContent').innerHTML = modalContent;
+        });
+    });
+});
+</script>
+{% endblock %}

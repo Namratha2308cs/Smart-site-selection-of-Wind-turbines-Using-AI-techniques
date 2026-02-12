@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-bolt"></i> Site Prediction</h2>
+        <p class="lead">Enter site parameters to predict optimality for wind turbine installation</p>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> <strong>Optimal Value Ranges:</strong> Below are suggested value ranges based on optimal turbine installation sites (Optimal for Turbine = 1)
+        </div>
+    </div>
+</div>
+
+<form method="POST" action="{{ url_for('predict') }}">
+    <div class="row">
+        <!-- Basic Parameters -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5><i class="fas fa-info-circle"></i> Basic Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Wind Speed (m/s)</label>
+                            <input type="number" step="0.1" class="form-control" name="wind_speed" value="10.0" required>
+                            <small class="form-text text-muted">Optimal range: 12.0-15.0 m/s</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Terrain Type</label>
+                            <select class="form-select" name="terrain_type" required>
+                                <option value="Flat">Flat</option>
+                                <option value="Hilly">Hilly</option>
+                                <option value="Mountainous" selected>Mountainous</option>
+                            </select>
+                            <small class="form-text text-muted">Optimal: Mountainous</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Land Use</label>
+                            <select class="form-select" name="land_use" required>
+                                <option value="Agricultural">Agricultural</option>
+                                <option value="Commercial">Commercial</option>
+                                <option value="Forest" selected>Forest</option>
+                                <option value="Residential">Residential</option>
+                            </select>
+                            <small class="form-text text-muted">Optimal: Forest</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Grid Connectivity (km)</label>
+                            <input type="number" step="0.1" class="form-control" name="grid_connectivity" value="5.0" required>
+                            <small class="form-text text-muted">Optimal range: 1.0-5.0 km</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Environmental Impact (1-10)</label>
+                            <input type="number" min="1" max="10" class="form-control" name="environmental_impact" value="5" required>
+                            <small class="form-text text-muted">Optimal range: 3-5 (Lower impact preferred)</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Economic Viability (1-10)</label>
+                            <input type="number" min="1" max="10" class="form-control" name="economic_viability" value="7" required>
+                            <small class="form-text text-muted">Optimal range: 6-8</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Environmental Factors -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5><i class="fas fa-tree"></i> Environmental Factors</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Wildlife Habitats Nearby</label>
+                            <select class="form-select" name="wildlife_habitats" required>
+                                <option value="Yes">Yes</option>
+                                <option value="No" selected>No</option>
+                            </select>
+                            <small class="form-text text-muted">Optimal: No (avoid wildlife areas)</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Protected Areas Nearby</label>
+                            <select class="form-select" name="protected_areas" required>
+                                <option value="Yes">Yes</option>
+                                <option value="No" selected>No</option>
+                            </select>
+                            <small class="form-text text-muted">Optimal: No (avoid protected areas)</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Zoning Laws Favorable</label>
+                            <select class="form-select" name="zoning_laws" required>
+                                <option value="Yes" selected>Yes</option>
+                                <option value="No">No</option>
+                            </select>
+                            <small class="form-text text-muted">Optimal: Yes</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Permit Status</label>
+                            <select class="form-select" name="permit_status" required>
+                                <option value="Approved" selected>Approved</option>
+                                <option value="Rejected">Rejected</option>
+                                <option value="Pending">Pending</option>
+                            </select>
+                            <small class="form-text text-muted">Optimal: Approved</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Accessibility</label>
+                            <select class="form-select" name="accessibility" required>
+                                <option value="Poor">Poor</option>
+                                <option value="Moderate" selected>Moderate</option>
+                                <option value="Good">Good</option>
+                            </select>
+                            <small class="form-text text-muted">Optimal: Moderate to Good</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Community Acceptance</label>
+                            <select class="form-select" name="community_acceptance" required>
+                                <option value="Low">Low</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="High" selected>High</option>
+                            </select>
+                            <small class="form-text text-muted">Optimal: High</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Technical Parameters -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5><i class="fas fa-cogs"></i> Technical Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Detailed Wind Speed (m/s)</label>
+                            <input type="number" step="0.1" class="form-control" name="detailed_wind_speed" value="10.0" required>
+                            <small class="form-text text-muted">Optimal range: 9.0-10.0 m/s</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Wind Direction (degrees)</label>
+                            <input type="number" step="1" class="form-control" name="wind_direction" value="180" required>
+                            <small class="form-text text-muted">Optimal range: 90-120° (consistent direction)</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Temperature (°C)</label>
+                            <input type="number" step="0.1" class="form-control" name="temperature" value="15.0" required>
+                            <small class="form-text text-muted">Optimal range: -10 to 10°C</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Humidity (%)</label>
+                            <input type="number" step="0.1" class="form-control" name="humidity" value="50.0" required>
+                            <small class="form-text text-muted">Optimal range: 60-70%</small>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Seasonal Variation</label>
+                            <select class="form-select" name="seasonal_variation" required>
+                                <option value="Low">Low</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="High" selected>High</option>
+                            </select>
+                            <small class="form-text text-muted">Optimal: High (consistent wind patterns)</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Elevation (m)</label>
+                            <input type="number" step="1" class="form-control" name="elevation" value="1000" required>
+                            <small class="form-text text-muted">Optimal range: 500-1000 m</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Economic Parameters -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5><i class="fas fa-chart-line"></i> Economic Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Proximity to Power Lines (km)</label>
+                            <input type="number" step="0.1" class="form-control" name="proximity_power_lines" value="5.0" required>
+                            <small class="form-text text-muted">Optimal range: 0.1-1.0 km</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Installation Cost ($M)</label>
+                            <input type="number" step="0.1" class="form-control" name="installation_cost" value="25.0" required>
+                            <small class="form-text text-muted">Optimal range: 35-40 million</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Energy Output Potential (MW)</label>
+                            <input type="number" step="0.1" class="form-control" name="energy_output" value="10.0" required>
+                            <small class="form-text text-muted">Optimal range: 6-7 MW</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="mt-4 pt-2">
+                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="fas fa-calculator"></i> Predict Site Optimality
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h6><i class="fas fa-lightbulb"></i> Optimal Site Characteristics Summary</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>Best conditions for turbine installation:</strong></p>
+                <ul class="mb-0">
+                    <li>Mountainous forest terrain with moderate accessibility</li>
+                    <li>Wind speeds 12-15 m/s with high seasonal consistency</li>
+                    <li>No wildlife habitats or protected areas nearby</li>
+                    <li>Approved permits and favorable zoning laws</li>
+                    <li>High community acceptance</li>
+                    <li>Close proximity to power lines (&lt;1 km)</li>
+                    <li>Moderate installation costs with good energy output</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

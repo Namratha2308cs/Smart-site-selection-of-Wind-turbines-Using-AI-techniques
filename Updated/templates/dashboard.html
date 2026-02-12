@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0">Wind Turbine – Prediction Dashboard</h3>
+    <div class="d-flex gap-2">
+      <button id="refreshBtn" class="btn btn-primary">
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Error banner (hidden by default) -->
+  <div id="errorBanner" class="alert alert-danger d-none" role="alert"></div>
+
+  <!-- Stats cards -->
+  <div class="row g-3">
+    <div class="col-12 col-md-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h6 class="text-muted mb-1">Total Predictions</h6>
+          <div class="display-5 fw-bold" id="total-predictions">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h6 class="text-muted mb-1">Optimal Sites</h6>
+          <div class="display-5 fw-bold text-success" id="optimal-predictions">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <h6 class="text-muted mb-1">Average Probability</h6>
+          <div class="display-5 fw-bold" id="avg-probability">0%</div>
+          <div class="progress mt-3" style="height: 8px;">
+            <div id="avg-probability-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('predict') }}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-calculator"></i><br>
+                            New Prediction
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('prediction_history') }}" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-history"></i><br>
+                            View History
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('index') }}" class="btn btn-info btn-lg w-100">
+                            <i class="fas fa-home"></i><br>
+                            Home Page
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Predictions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-history"></i> Recent Predictions</h5>
+            </div>
+            <div class="card-body">
+                {% if history %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Prediction</th>
+                                <th>Probability</th>
+                                <th>Wind Speed</th>
+                                <th>Terrain</th>
+                                
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pred in history %}
+                            <tr>
+                                <td>{{ pred.created_at[:16] }}</td>
+                                <td>
+                                    {% if pred.prediction == 1 %}
+                                        <span class="badge bg-success">Optimal</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Not Optimal</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar {% if pred.prediction == 1 %}bg-success{% else %}bg-danger{% endif %}" 
+                                             style="width: {{ (pred.probability * 100)|int }}%">
+                                            {{ "%.1f"|format(pred.probability * 100) }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% set input_data = pred.input_data|fromjson %}
+                                    {{ "%.1f"|format(input_data.get('Wind Speed (m/s)', 0)) }} m/s
+                                </td>
+                                <td>
+                                    {% set input_data = pred.input_data|fromjson %}
+                                    {{ input_data.get('Terrain Type', 'N/A') }}
+                                </td>
+                               
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5>No predictions yet</h5>
+                    <p class="text-muted">Make your first prediction to see it here!</p>
+                    <a href="{{ url_for('predict') }}" class="btn btn-primary">
+                        <i class="fas fa-calculator"></i> Make Prediction
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Prediction Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  // Utilities
+  const $ = (id) => document.getElementById(id);
+  const showError = (msg) => {
+    const banner = $('errorBanner');
+    banner.textContent = msg;
+    banner.classList.remove('d-none');
+  };
+  const hideError = () => $('errorBanner').classList.add('d-none');
+
+  async function fetchJSON(url, options = {}) {
+    const res = await fetch(url, {
+      method: 'GET',
+      credentials: 'same-origin',
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store',
+      ...options
+    });
+
+    // If redirected to login (HTML), throw readable error
+    const ct = res.headers.get('content-type') || '';
+    if (!res.ok || !ct.includes('application/json')) {
+      const text = await res.text();
+      throw new Error(`Failed to load ${url}: ${text.slice(0, 300)}`);
+    }
+    return res.json();
+  }
+
+  async function loadStats() {
+    hideError();
+    try {
+      const data = await fetchJSON('/api/prediction_stats');
+
+      // Defensive parsing
+      const total = Number(data.total_predictions ?? 0);
+      const optimal = Number(data.optimal_predictions ?? 0);
+      const avgPct = Number(data.avg_probability ?? 0);
+
+      $('total-predictions').textContent = total;
+      $('optimal-predictions').textContent = optimal;
+      $('avg-probability').textContent = `${avgPct}%`;
+
+      // Progress bar width clamped to [0, 100]
+      $('avg-probability-bar').style.width = `${Math.max(0, Math.min(avgPct, 100))}%`;
+      $('avg-probability-bar').setAttribute('aria-valuenow', Math.max(0, Math.min(avgPct, 100)));
+
+    } catch (err) {
+      console.error(err);
+      showError('Could not load stats. If your session expired, please log in again.');
+    }
+  }
+
+  // Hook up refresh button
+  document.addEventListener('DOMContentLoaded', function () {
+    $('refreshBtn').addEventListener('click', loadStats);
+    loadStats(); // initial load
+  });
+})();
+</script>
+{% endblock scripts %}
+

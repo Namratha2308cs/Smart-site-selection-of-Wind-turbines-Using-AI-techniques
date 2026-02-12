@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto text-center">
+        <div class="jumbotron bg-light p-5 rounded">
+            <h1 class="display-4"><i class="fas fa-wind text-primary"></i> Wind Turbine Site Selection AI</h1>
+            <p class="lead">AI-powered tool for predicting optimal wind turbine locations with explainable insights.</p>
+            <hr class="my-4">
+            <p>Using machine learning to analyze environmental, economic, and technical factors for optimal site selection.</p>
+            {% if not session.user_id %}
+                <div class="mt-4">
+                    <a class="btn btn-primary btn-lg me-3" href="{{ url_for('register') }}">
+                        <i class="fas fa-user-plus"></i> Get Started
+                    </a>
+                    <a class="btn btn-outline-primary btn-lg" href="{{ url_for('login') }}">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                </div>
+            {% else %}
+                <div class="mt-4">
+                    <a class="btn btn-primary btn-lg me-3" href="{{ url_for('predict') }}">
+                        <i class="fas fa-bolt"></i> Make Prediction
+                    </a>
+                    <a class="btn btn-outline-primary btn-lg" href="{{ url_for('dashboard') }}">
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-tree fa-3x text-success mb-3"></i>
+                        <h5>Environmental Analysis</h5>
+                        <p>Assess environmental impact and wildlife considerations</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-chart-line fa-3x text-warning mb-3"></i>
+                        <h5>Economic Viability</h5>
+                        <p>Evaluate cost-effectiveness and energy output potential</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-cogs fa-3x text-info mb-3"></i>
+                        <h5>Technical Factors</h5>
+                        <p>Analyze wind patterns, terrain, and infrastructure</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

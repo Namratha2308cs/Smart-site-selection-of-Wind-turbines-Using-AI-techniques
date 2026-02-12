@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-chart-bar"></i> Prediction Results</h2>
+        
+        <!-- Prediction Result -->
+        <div class="card mb-4">
+            <div class="card-header {% if prediction == 1 %}bg-success{% else %}bg-danger{% endif %} text-white">
+                <h4 class="mb-0">
+                    {% if prediction == 1 %}
+                        <i class="fas fa-check-circle"></i> Site is Optimal for Wind Turbine
+                    {% else %}
+                        <i class="fas fa-times-circle"></i> Site is Not Optimal for Wind Turbine
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>Prediction Confidence: {{ "%.2f"|format(probability * 100) }}%</h5>
+                        <div class="progress mb-3" style="height: 30px;">
+                            <div class="progress-bar {% if prediction == 1 %}bg-success{% else %}bg-danger{% endif %}" 
+                                 style="width: {{ probability * 100 }}%">
+                                {{ "%.1f"|format(probability * 100) }}%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="alert {% if prediction == 1 %}alert-success{% else %}alert-danger{% endif %}">
+                            <strong>Recommendation:</strong>
+                            {% if prediction == 1 %}
+                                This site shows strong potential for wind turbine installation.
+                            {% else %}
+                                Consider alternative locations or address limiting factors.
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reasons for Prediction -->
+                <div class="mt-4">
+                    <h5><i class="fas fa-search"></i> Key Factors Influencing This Prediction:</h5>
+                    <div class="row mt-3">
+                        {% set reasons = [] %}
+                        
+                        <!-- Wind Speed Analysis -->
+                        {% if form_data['Wind Speed (m/s)'] >= 12 and form_data['Wind Speed (m/s)'] <= 15 %}
+                            {% set _ = reasons.append(('positive', 'wind_speed', 'Wind speed is in optimal range (12-15 m/s)')) %}
+                        {% elif form_data['Wind Speed (m/s)'] < 8 %}
+                            {% set _ = reasons.append(('negative', 'wind_speed', 'Wind speed is too low for efficient operation (< 8 m/s)')) %}
+                        {% else %}
+                            {% set _ = reasons.append(('neutral', 'wind_speed', 'Wind speed is acceptable but not optimal')) %}
+                        {% endif %}
+
+                        <!-- Terrain Type -->
+                        {% if form_data['Terrain Type'] == 'Mountainous' %}
+                            {% set _ = reasons.append(('positive', 'terrain', 'Mountainous terrain provides excellent wind exposure')) %}
+                        {% elif form_data['Terrain Type'] == 'Flat' %}
+                            {% set _ = reasons.append(('negative', 'terrain', 'Flat terrain may have lower wind speeds')) %}
+                        {% endif %}
+
+                        <!-- Environmental Factors -->
+                        {% if form_data['wildlife_habitats_nearby'] == 'No' and form_data['protected_areas_nearby'] == 'No' %}
+                            {% set _ = reasons.append(('positive', 'environment', 'No wildlife habitats or protected areas nearby')) %}
+                        {% elif form_data['wildlife_habitats_nearby'] == 'Yes' or form_data['protected_areas_nearby'] == 'Yes' %}
+                            {% set _ = reasons.append(('negative', 'environment', 'Presence of wildlife habitats or protected areas may restrict development')) %}
+                        {% endif %}
+
+                        <!-- Economic Factors -->
+                        {% if form_data['installation_cost (million $)'] >= 35 and form_data['installation_cost (million $)'] <= 40 %}
+                            {% set _ = reasons.append(('positive', 'cost', 'Installation cost is in optimal range for expected returns')) %}
+                        {% elif form_data['installation_cost (million $)'] > 50 %}
+                            {% set _ = reasons.append(('negative', 'cost', 'High installation cost may impact economic viability')) %}
+                        {% endif %}
+
+                        <!-- Energy Output -->
+                        {% if form_data['energy_output_potential (MW)'] >= 6 and form_data['energy_output_potential (MW)'] <= 7 %}
+                            {% set _ = reasons.append(('positive', 'output', 'Energy output potential is optimal')) %}
+                        {% elif form_data['energy_output_potential (MW)'] < 5 %}
+                            {% set _ = reasons.append(('negative', 'output', 'Low energy output potential may not justify investment')) %}
+                        {% endif %}
+
+                        <!-- Regulatory Factors -->
+                        {% if form_data['permit_status'] == 'Approved' %}
+                            {% set _ = reasons.append(('positive', 'permit', 'Permits are already approved')) %}
+                        {% elif form_data['permit_status'] == 'Rejected' %}
+                            {% set _ = reasons.append(('negative', 'permit', 'Permits have been rejected')) %}
+                        {% endif %}
+
+                        <!-- Grid Connectivity -->
+                        {% if form_data['Grid Connectivity (km)'] <= 5 %}
+                            {% set _ = reasons.append(('positive', 'grid', 'Good grid connectivity distance')) %}
+                        {% else %}
+                            {% set _ = reasons.append(('negative', 'grid', 'Long distance to grid may increase costs')) %}
+                        {% endif %}
+
+                        <!-- Display Reasons -->
+                        <div class="col-md-6">
+                            <h6 class="text-success"><i class="fas fa-check"></i> Positive Factors:</h6>
+                            <ul class="list-group">
+                                {% for type, category, reason in reasons %}
+                                    {% if type == 'positive' %}
+                                        <li class="list-group-item list-group-item-success">
+                                            <small>{{ reason }}</small>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if not reasons|selectattr('0', 'equalto', 'positive')|list %}
+                                    <li class="list-group-item list-group-item-light">
+                                        <small>No significant positive factors identified</small>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-danger"><i class="fas fa-times"></i> Limiting Factors:</h6>
+                            <ul class="list-group">
+                                {% for type, category, reason in reasons %}
+                                    {% if type == 'negative' %}
+                                        <li class="list-group-item list-group-item-danger">
+                                            <small>{{ reason }}</small>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                {% if not reasons|selectattr('0', 'equalto', 'negative')|list %}
+                                    <li class="list-group-item list-group-item-light">
+                                        <small>No significant limiting factors identified</small>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Importance -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-chart-pie"></i> Explainable AI: Feature Importance</h5>
+            </div>
+            <div class="card-body">
+                <p>Top factors influencing this prediction (technical analysis):</p>
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Importance Score</th>
+                                <th>Your Value</th>
+                                <th>Assessment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for feature, importance in feature_importance.items() %}
+                            <tr>
+                                <td>{{ feature }}</td>
+                                <td>
+                                    <div class="progress">
+                                        <div class="progress-bar" style="width: {{ (importance * 100)|abs|int }}%">
+                                            {{ "%.3f"|format(importance) }}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ form_data.get(feature, 'N/A') }}</td>
+                                <td>
+                                    {% if importance > 0.05 %}
+                                        <span class="badge bg-success">High Impact</span>
+                                    {% elif importance > 0.01 %}
+                                        <span class="badge bg-warning">Medium Impact</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Low Impact</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="text-center">
+            <a href="{{ url_for('predict') }}" class="btn btn-primary me-2">
+                <i class="fas fa-redo"></i> New Prediction
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
